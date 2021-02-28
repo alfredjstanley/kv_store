@@ -4,10 +4,13 @@ fn main() {
     let mut args = std::env::args().skip(1);
     let key = args.next().unwrap();
     let value = args.next().unwrap();
+    println!("Our key is {}, and value is {}", key, value);
 
     let mut database = Database::new().expect("creating db failed");
     database.insert(key.to_uppercase(), value.clone());
     database.insert(key, value);
+
+    database.flush().expect("flush crashed");
 }
 
 struct Database {
@@ -17,16 +20,17 @@ struct Database {
 impl Database {
     fn new() -> Result<Database,std::io::Error> {
         // read the kv.db file
-        let contents = std::fs::read_to_string("kv.db")?;
+        
 
         let mut map = HashMap::new();
+        let contents = std::fs::read_to_string("kv.db")?;
 
 
         for line in contents.lines() {
             let mut chunks = line.splitn(2, '\t');
             let key = chunks.next().expect("no key");
             let value = chunks.next().expect("no value");
-            println!("key is {:#?} and value is {:#?}", key, value);
+            // println!("key is {:#?} and value is {:#?}", key, value);
             map.insert(key.to_owned(), value.to_owned());
             
         }
@@ -43,7 +47,7 @@ impl Database {
     fn flush(self) -> Result<(), std::io::Error> {
         let mut contents = String::new();
         for pairs in self.map {
-            let kvpair = format!("{}\t{}", pairs.0, pairs.1);
+            let kvpair = format!("{}\t{}\n", pairs.0, pairs.1);
             contents.push_str(&kvpair);
         }
 
